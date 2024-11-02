@@ -1,0 +1,31 @@
+@startuml er-device
+title Device ER-diagram
+
+entity Device {
+  * id : UUID <<PK>>
+  --
+  user_id : UUID <<FK>>
+  location_id : UUID
+  type : int
+  model : string
+  manufacturer : string
+  serial_number : string
+  status: json
+}
+
+entity SubscriptionLevel {
+  * id : UUID <<PK>>
+  --
+  max_devices_count: int
+}
+
+entity User {
+  * id : UUID <<PK>>
+  --
+  subscription_level_id : UUID <<FK>>
+}
+
+User ||--o{ Device : "has"
+User ||--|| SubscriptionLevel : "has"
+
+@enduml

@@ -1,0 +1,46 @@
+@startuml scenarios_component_diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+Container_Boundary(scenarios_service, "Scenarios service") {
+
+    Boundary(presentation_layer, "Presentation layer") {
+        Component(scenarios_controller, "ScenariosController")
+    }
+
+    Boundary(application_layer, "Application layer") {
+        Component(create_scenario_command_handler, "CreateScenarioCommandHandler")
+        Component(update_scenario_command_handler, "UpdateScenarioCommandHandler")
+        Component(process_outbox_command_handler, "ProcessOutboxCommandHandler")
+    }
+
+    Boundary(infrastructure_layer, "Infrastructure layer") {
+        Component(scenario_event_consumer, "ScenarioEventConsumer")
+        Component(outbox_job, "OutboxJob")
+        Component(scenario_repository, "ScenarioRepository")
+        Component(outbox_repository, "OutboxRepository")
+        Component(conditions_repository, "CachedConditionsRepository")
+    }
+}
+
+Container(api_gateway, "API Gateway", "Kong", "Description")
+Container(kafka, "Event Broker", "Kafka", "Provides asynchronous and scalable event processing")
+ContainerDb(scenarios_db, "Scenarios database", "Postgres", "Stores user scenarios")
+ContainerDb(scenarios_memory_db, "In-memory database", "Redis", "Stores scenarios conditions for fast search")
+
+Rel(scenarios_controller, update_scenario_command_handler, "Uses")
+Rel(scenarios_controller, create_scenario_command_handler, "Uses")
+Rel(create_scenario_command_handler, scenario_repository, "Uses")
+Rel(update_scenario_command_handler, scenario_repository, "Uses")
+Rel_D(scenario_repository, scenarios_db, "Writes to")
+
+Rel(outbox_job, process_outbox_command_handler, "Uses")
+Rel(process_outbox_command_handler, outbox_repository, "Uses")
+Rel(process_outbox_command_handler, kafka, "Publish events to")
+Rel_D(outbox_repository, scenarios_db, "Writes to")
+
+Rel(scenario_event_consumer, kafka, "consume events from")
+Rel(scenario_event_consumer, conditions_repository, "Uses")
+Rel(conditions_repository, scenarios_memory_db, "write conditions to")
+Rel_D(api_gateway, scenarios_controller, "Makes API Calls to", "JSON/HTTPS")
+
+@enduml

@@ -1,0 +1,97 @@
+@startuml c2
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+AddElementTag("in-memory-db", $bgColor="#b55733")
+AddRelTag("async", $textColor="green", $lineColor="green")
+
+' Devices Management
+Boundary(devicesManagement, "Warm Home System") {
+    Container(web_app, "Web Application", "HTML, Javascript", "SSR or SPA application")
+    Container(api_gateway, "API Gateway", "Kong", "Description")
+    Container(identity_and_access, "Identity and Access Management", "KeyCloak", "Authentication and authorization management")
+    Rel(web_app, api_gateway, "Makes API calls to", "JSON/HTTPS")
+    Rel(web_app, identity_and_access, "Authenticate and authorize using", "JSON/HTTPS")
+    Rel_L(api_gateway, identity_and_access, "Validate OAuth2 tokens", "JSON/HTTPS")
+
+
+    ' Messaging and events
+    Boundary(messaging_management, "Messaging and Events processing") {
+        Container(mqtt_broker, "MQTT Broker", "", "Provides bidirectional communication with devices")
+
+        WithoutPropertyHeader()
+        AddProperty("MqttSourceConnector")
+        AddProperty("MqttSinkConnector")
+        Container(kafka_connect, "Kafka Connect", "Kafka Connect", "Provides event broadcasting between Kafka and MQTT broker")
+
+        Container(kafka, "Event Broker", "Kafka", "Provides asynchronous and scalable event processing")
+
+        BiRel(kafka_connect, mqtt_broker, "translate Kafka events to")
+        BiRel(kafka_connect, kafka, "translate MQTT messages to")
+    }
+    
+
+    ' Telemetry
+    Boundary(telemetry_management, "Telemetry service") {
+        Container(telemetry_service, "Telemetry", "ASP.NET Core", "Processes and stores telemetry from devices")
+        ContainerDb(telemetry_db, "Telemetry database", "ClickHouse", "Stores telemetry data")
+        Rel(telemetry_service, telemetry_db, "Reads from and writes to")
+    }
+
+    ' Scenarios
+    Boundary(scenarios_management, "Scenarios service") {
+        Container(scenarios_service, "Scenarios", "ASP.NET Core", "User scenarios management")
+        ContainerDb(scenarios_db, "Scenarios database", "Postgres", "Stores user scenarios")
+        ContainerDb(scenarios_memory_db, "In-memory database", "Redis", "Stores scenarios conditions for fast search", $tags="in-memory-db")
+        Rel(scenarios_service, scenarios_db, "Writes to")
+        Rel(scenarios_service, scenarios_memory_db, "Reads from and writes to")
+    }
+
+    ' Devices
+    Boundary(devices_management, "Devices service") {
+        Container(devices_service, "Devices", "ASP.NET Core", "IoT device management")
+        ContainerDb(devices_db, "Devices database", "Postgres", "Stores devices data and state")
+        Rel(devices_service, devices_db, "Reads from and writes to")
+    }
+
+    ' Users
+    Boundary(users_management, "Users service") {
+        Container(users_service, "Users", "ASP.NET Core", "User profile management")
+        ContainerDb(users_db, "Users database", "Postgres", "Stores users data")
+        Rel(users_service, users_db, "Reads from and writes to")
+    }
+
+    ' Locations
+    Boundary(locations_management, "Locations service") {
+        Container(locations_service, "Locations", "ASP.NET Core", "User's locations management")
+        ContainerDb(locations_db, "Locations database", "Postgres", "Stores locations data")
+        Rel_D(locations_service, locations_db, "Reads from and writes to")
+    }
+
+    Lay_R(locations_management, users_management)
+    Lay_R(users_management, telemetry_management)
+}
+
+Person(user, "User", "A user of the Warm Home system")
+Person(technician, "Client Support", "A support team")
+
+System_Ext(devices, "Devices", "IoT devices", )
+
+Rel(user, web_app, "Controls IoT devices using", "HTTPS")
+Rel(technician, web_app, "Support users using", "HTTPS")
+
+' MQTT
+Rel_U(devices, mqtt_broker, "Sends telemetry to and receive commands from", "MQTT")
+
+' API Gateway
+Rel(api_gateway, users_service, "Makes API calls to", "JSON/HTTPS")
+Rel(api_gateway, telemetry_service, "Makes API calls to", "JSON/HTTPS")
+Rel(api_gateway, scenarios_service, "Makes API calls to", "JSON/HTTPS")
+Rel(api_gateway, devices_service, "Makes API calls to", "JSON/HTTPS")
+Rel(api_gateway, locations_service, "Makes API calls to", "JSON/HTTPS")
+
+Rel(devices_service, kafka, "Publish events with commands to", $tags="async")
+Rel(scenarios_service, devices_service, "Makes API calls to", "JSON/HTTPS")
+
+SHOW_LEGEND(false)
+
+@enduml
