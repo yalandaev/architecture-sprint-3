@@ -1,0 +1,35 @@
+@startuml er-user
+title User ER-diagram
+
+entity Preferences {
+  * id : UUID <<PK>>
+  --
+  user_id : UUID <<FK>>
+  subscribed_to_news : boolean
+  application_theme: int
+}
+
+entity User {
+  * id : UUID <<PK>>
+  --
+  name : varchar
+  birthday: DateTime
+  status: int
+  subscription_level_id : UUID <<FK>>
+}
+
+entity SubscriptionLevel {
+  * id : UUID <<PK>>
+  --
+  name : string
+  telemetry_ttl_duration: int
+  max_scenarios_count: int
+  max_location_count: int
+  max_devices_count: int
+  price: decimal
+}
+
+User ||--|| Preferences : "has"
+User ||--|| SubscriptionLevel : "has"
+
+@enduml

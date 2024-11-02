@@ -1,0 +1,38 @@
+@startuml er-telemetry
+title Telemetry ER-diagram
+
+entity Telemetry {
+  * id : UUID <<PK>>
+  --
+  device_id : UUID <<FK>>
+  type : string
+  value : Float64
+  timestamp : DateTime
+  ttl: int
+}
+
+entity Device {
+  * id : UUID <<PK>>
+  --
+  name : varchar
+  user_id : UUID <<FK>>
+}
+
+entity User {
+  * id : UUID <<PK>>
+  --
+  subscription_level_id : UUID <<FK>>
+  name : varchar
+}
+
+entity SubscriptionLevel {
+  * id : UUID <<PK>>
+  --
+  ttl_duration: int
+}
+
+
+User ||--o{ Device : "has"
+Device ||--o{ Telemetry : "has"
+
+@enduml

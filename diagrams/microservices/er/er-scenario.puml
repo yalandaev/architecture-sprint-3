@@ -1,0 +1,28 @@
+@startuml er-scenario
+title Scenario ER-diagram
+
+entity Scenario {
+  * id : UUID <<PK>>
+  --
+  user_id : UUID <<FK>>
+  is_active : boolean
+  condition : json
+  actions : json
+}
+
+entity SubscriptionLevel {
+  * id : UUID <<PK>>
+  --
+  max_scenarios_count: int
+}
+
+entity User {
+  * id : UUID <<PK>>
+  --
+  subscription_level_id : UUID <<FK>>
+}
+
+User ||--o{ Scenario : "has"
+User ||--|| SubscriptionLevel : "has"
+
+@enduml

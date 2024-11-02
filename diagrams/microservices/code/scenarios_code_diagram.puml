@@ -1,0 +1,61 @@
+@startuml scenarios_service
+title Scenarios service
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+
+class ScenariosController {
+    +void CreateScenario()
+    +void UpdateScenario()
+}
+
+interface IRequest {
+}
+
+interface IRequestHandler {
+    +TResult Handle()
+}
+
+class CreateScenarioCommand extends IRequest {
+    +string Name
+    +Condition Condition
+    +List<Action> Actions
+}
+
+class CreateScenarioCommandHandler extends IRequestHandler {
+    +TResult Handle()
+}
+
+class Condition {
+    Guid DeviceID
+    string ValueType
+    enum ConditionType
+    int Value
+}
+
+class Action {
+    Guid DeviceID
+    enum ActionType
+}
+
+interface IScenarioRepository {
+    +void SaveScenario()
+    +void UpdateScenario()
+    +void SaveToOutbox()
+}
+
+class ScenarioRepository extends IScenarioRepository {
+    +void SaveScenario()
+    +void UpdateScenario()
+    +void SaveToOutbox()
+}
+
+ScenariosController -->  CreateScenarioCommandHandler : uses
+CreateScenarioCommand "1" -- "0..*" Action : has
+CreateScenarioCommand --> Condition : has
+CreateScenarioCommandHandler --> CreateScenarioCommand : handles
+CreateScenarioCommandHandler --> ScenarioRepository : uses
+
+@enduml
