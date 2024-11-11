@@ -1,0 +1,81 @@
+asyncapi: '3.0.0'
+info:
+  title: Devices Service
+  version: '1.0.0'
+  description: |
+    Сервис, управляющий устройствами умного дома, получает данные телеметрии от устройств и отправляет команды на управление устройствами.
+  contact:
+    name: Contact Name
+    email: yalandaev@gmail.com
+
+channels:
+  telemetry:
+    address: telemetry
+    messages:
+      telemetry:
+        $ref: '#/components/messages/Telemetry'
+  commands:
+    address: commands
+    messages:
+      command:
+        $ref: '#/components/messages/Command'
+
+operations:
+  sendCommand:
+    action: send
+    channel:
+      $ref: '#/channels/commands'
+    messages:
+      - $ref: '#/channels/commands/messages/command'
+  receiveTelemetry:
+    action: receive
+    channel:
+      $ref: '#/channels/telemetry'
+    messages:
+      - $ref: '#/channels/telemetry/messages/telemetry'
+
+components:
+  messages:
+    Telemetry:
+      name: Telemetry
+      title: Telemetry published event
+      summary: Telemetry published event
+      payload:
+        $ref: '#/components/schemas/TelemetryEvent'
+    Command:
+      name: Command
+      title: Command event for device
+      summary: Command event for device
+      payload:
+        $ref: '#/components/schemas/DeviceCommandMessage'
+  schemas:
+    TelemetryEvent:
+      type: object
+      properties:
+        deviceId:
+          type: string
+          description: Unique device ID
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp
+        telemetryType:
+          type: string
+          description: Telemetry type (temperature, humidity, etc.)
+        value:
+          type: number
+          description: Telemetry value
+    DeviceCommandMessage:
+      type: object
+      properties:
+        deviceId:
+          type: string
+          description: Unique device ID
+        command:
+          type: string
+          description: Command to execute
+        parameters:
+          type: object
+          additionalProperties:
+            type: string
+          description: Additional params
