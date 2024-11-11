@@ -1,0 +1,681 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "WarmHome API",
+        "version": "v2"
+    },
+    "servers": [
+        {
+            "url": "/localhost:8100/api/v1"
+        }
+    ],
+    "tags": [
+        {
+            "name": "Scenarios",
+            "description": "Управление сценариями для автоматизации умного дома"
+        }
+    ],
+    "paths": {
+        "/scenarios": {
+            "get": {
+                "summary": "Список сценариев",
+                "description": "Возвращает постраничный список сценариев.",
+                "tags": [
+                    "Scenarios"
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "sortBy",
+                        "description": "Название поля сортировки",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "publishDate",
+                                "title"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "sortDirection",
+                        "description": "Направление сортировки",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "skip",
+                        "description": "Сколько записей пропустить",
+                        "required": true,
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "take",
+                        "description": "Сколько записей получить",
+                        "required": true,
+                        "schema": {
+                            "type": "number"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешное выполнение, данные в теле ответа",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "allOf": [
+                                        {
+                                            "$ref": "#/components/schemas/page"
+                                        }
+                                    ],
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/components/schemas/scenarioDto"
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/authRequired"
+                    }
+                }
+            },
+            "post": {
+                "summary": "Создаёт сценарий",
+                "description": "Создаёт сценарий с заданными параметрами.\n\nПо умолчанию сценарий всегда создаётся черновиком. Если требуется сразу опубликовать сценарий при создании, необходимо в запрос передать параметр `publish=true`.",
+                "tags": [
+                    "Scenarios"
+                ],
+                "parameters": [
+                    {
+                        "name": "publish",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "description": "`true`, если требуется сразу опубликовать сценарий при создании"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/scenarioDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": ""
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/badRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/authRequired"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/validationFailed"
+                    }
+                }
+            }
+        },
+        "/scenarios/{scenario-id}": {
+            "get": {
+                "summary": "Получить описание сценария",
+                "description": "Возвращает описание сценария по его идентификатору",
+                "tags": [
+                    "Scenarios"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/scenarioIdId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешное выполнение",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/scenarioDto"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/badRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/authRequired"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/notFound"
+                    }
+                }
+            },
+            "put": {
+                "summary": "Обновить сценарий",
+                "description": "Обновляет сценарий в соответствии с переданной моделью",
+                "tags": [
+                    "Scenarios"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/scenarioIdId"
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/scenarioDto"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Успешное выполнение",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/scenarioDto"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/badRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/authRequired"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/notFound"
+                    }
+                }
+            }
+        },
+        "/scenarios/{scenario-id}/publish": {
+            "post": {
+                "summary": "Опубликовать сценарий",
+                "description": "Публикует сценарий.\n\nВ случае вызова метода для уже опубликованного сценария ошибки не произойдёт.",
+                "tags": [
+                    "Scenarios"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/scenarioIdId"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Сценарий уже опубликован"
+                    },
+                    "204": {
+                        "description": "Сценарий опубликован"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/authRequired"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/notFound"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "auth": {
+                "type": "oauth2",
+                "flows": {
+                    "password": {
+                        "tokenUrl": "https://localhost:8100/connect/token",
+                        "refreshUrl": "https://localhost:8100/connect/token",
+                        "scopes": {
+                            "api": "Full access"
+                        }
+                    }
+                }
+            }
+        },
+        "schemas": {
+            "scenarioDto": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Название сценария"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "Название сценария",
+                        "example": "Включить кондиционер при повышении температуры"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Дата создания"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Дата обновления"
+                    },
+                    "isActive": {
+                        "type": "boolean",
+                        "description": "Активен ли сценарий"
+                    },
+                    "triggers": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/scernarioTriggerDto"
+                        }
+                    },
+                    "conditions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/scernarioConditionDto"
+                        }
+                    },
+                    "actions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/scernarioActionDto"
+                        }
+                    }
+                },
+                "required": [
+                    "title"
+                ]
+            },
+            "scernarioTriggerDto": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "description": "Тип триггера (например, time или sensor).",
+                        "example": "time",
+                        "enum": [
+                            "time",
+                            "sensor"
+                        ]
+                    },
+                    "time": {
+                        "type": "string",
+                        "description": "Время триггера (если type это 'time').",
+                        "example": "18:00"
+                    },
+                    "repeat": {
+                        "type": "string",
+                        "description": "Повтор триггера (daily, weekly).",
+                        "example": "daily",
+                        "enum": [
+                            "hourly",
+                            "daily",
+                            "weekly",
+                            "monthly"
+                        ]
+                    },
+                    "deviceId": {
+                        "type": "string",
+                        "description": "Идентификатор устройства (если type это 'sensor').",
+                        "example": "sensor-001"
+                    },
+                    "parameter": {
+                        "type": "string",
+                        "description": "Параметр устройства (если type это 'sensor').",
+                        "example": "temperature",
+                        "enum": [
+                            "temperature",
+                            "light",
+                            "pressure"
+                        ]
+                    },
+                    "condition": {
+                        "$ref": "#/components/schemas/conditionOperator"
+                    }
+                }
+            },
+            "scernarioConditionDto": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "description": "Тип условия (например, location, presence).",
+                        "example": "location",
+                        "enum": [
+                            "location",
+                            "presense"
+                        ]
+                    },
+                    "locationId": {
+                        "type": "string",
+                        "description": "ID локации или комнаты",
+                        "example": "living-room"
+                    },
+                    "parameter": {
+                        "type": "string",
+                        "description": "Параметр для проверки",
+                        "example": "presence"
+                    },
+                    "condition": {
+                        "$ref": "#/components/schemas/conditionOperator"
+                    }
+                }
+            },
+            "scernarioActionDto": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "description": "Тип действия",
+                        "example": "device_control",
+                        "enum": [
+                            "device_control",
+                            "something_else"
+                        ]
+                    },
+                    "deviceId": {
+                        "type": "string",
+                        "description": "ID устройства.",
+                        "example": "light-001"
+                    },
+                    "command": {
+                        "type": "string",
+                        "description": "Команда для устройства.",
+                        "example": "turn_on"
+                    },
+                    "parameters": {
+                        "type": "object",
+                        "description": "Дополнительные параметры к команде",
+                        "properties": {
+                            "temperature": {
+                                "type": "integer",
+                                "description": "Температура",
+                                "example": 22
+                            }
+                        }
+                    }
+                }
+            },
+            "conditionOperator": {
+                "type": "object",
+                "properties": {
+                    "operator": {
+                        "type": "string",
+                        "description": "Оператор сравнения (<, >, ==).",
+                        "example": "<",
+                        "enum": [
+                            "<",
+                            ">",
+                            "==",
+                            "<=",
+                            ">=",
+                            "!="
+                        ]
+                    },
+                    "value": {
+                        "type": "integer",
+                        "description": "Значение для сравнения",
+                        "example": 20
+                    }
+                }
+            },
+            "errorMessage": {
+                "type": "object",
+                "description": "Сообщение об ошибке",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "description": "Код ошибки"
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "Текст ошибки"
+                    },
+                    "target": {
+                        "type": "string",
+                        "description": "Указатель причины ошибки. Здесь может быть название поля в переданных данных, с которым связана ошибка.",
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "code",
+                    "message"
+                ]
+            },
+            "validationErrorMessage": {
+                "description": "Сообщение об ошибке, включающее в себя список ошибок валидации",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/errorMessage"
+                    }
+                ],
+                "type": "object",
+                "properties": {
+                    "details": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "code": {
+                                    "type": "string",
+                                    "description": "Код ошибки валидации"
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "description": "Сообщение об ошибке"
+                                },
+                                "target": {
+                                    "type": "string",
+                                    "description": "Указатель на причину ошибки валидации, например, на поле во входных данных"
+                                }
+                            },
+                            "required": [
+                                "code",
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            },
+            "page": {
+                "description": "Модель постраничной навигации",
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer"
+                    },
+                    "totalCount": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "responses": {
+            "notFound": {
+                "description": "Ответ для случая, если сущность не найдена",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/errorMessage"
+                        },
+                        "example": {
+                            "code": "NotFounf",
+                            "message": "Элемент с переданным идентификатором не найден."
+                        }
+                    }
+                }
+            },
+            "authRequired": {
+                "description": "Ответ для случая, когда пользователь не залогинен.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/errorMessage"
+                        },
+                        "example": {
+                            "code": "AuthRequired",
+                            "message": "Пользователь должен войти в систему."
+                        }
+                    }
+                }
+            },
+            "forbidden": {
+                "description": "Ответ для случая, когда пользователь не имеет прав на выполнение операции.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/errorMessage"
+                        },
+                        "example": {
+                            "code": "Forbidden",
+                            "message": "Нет прав нат выполнение данной операции."
+                        }
+                    }
+                }
+            },
+            "badRequest": {
+                "description": "Ответ для случая ошибочного запроса.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/errorMessage"
+                        },
+                        "examples": {
+                            "badParameter": {
+                                "description": "Ошибка при неверном формате параметра",
+                                "value": {
+                                    "code": "BadParameterValue",
+                                    "message": "Неверное значение параметра \"embedded\": ожидается \"true\" или \"false\"",
+                                    "target": "embedded"
+                                }
+                            },
+                            "badId": {
+                                "description": "Ошибка при неверном формате идентификатора",
+                                "value": {
+                                    "code": "BadIdFormat",
+                                    "message": "Неверный формат идентификатора: ожидается UUID"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "validationFailed": {
+                "description": "Ответ для случаев ошибок валидации.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/validationErrorMessage"
+                        },
+                        "examples": {
+                            "createProfileValidationError": {
+                                "description": "Ошибки валидации полей при создании сценария",
+                                "value": {
+                                    "code": "ValidationFailed",
+                                    "message": "Неверные значения полей",
+                                    "details": [
+                                        {
+                                            "code": "InvalidTitle",
+                                            "message": "Слишком короткое имя",
+                                            "target": "title"
+                                        },
+                                        {
+                                            "code": "MissingConditions",
+                                            "message": "Не указаны условия сценария!",
+                                            "target": "conditions"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "parameters": {
+            "scenarioIdId": {
+                "name": "scenario-id",
+                "in": "path",
+                "required": true,
+                "description": "Идентификатор сценария",
+                "schema": {
+                    "type": "string",
+                    "format": "uuid"
+                }
+            }
+        },
+        "examples": {
+            "scenario": {
+                "description": "Пример сценария",
+                "value": {
+                    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "title": "Включить кондиционер при повышении температуры",
+                    "createdAt": "2024-03-06T19:08:58.491Z",
+                    "updatedAt": "2024-11-11T19:08:58.491Z",
+                    "isActive": true,
+                    "triggers": [
+                        {
+                            "type": "sensor",
+                            "deviceId": "sensor-001",
+                            "parameter": "temperature",
+                            "condition": {
+                                "operator": ">",
+                                "value": 28
+                            }
+                        }
+                    ],
+                    "conditions": [
+                        {
+                            "type": "location",
+                            "locationId": "living-room",
+                            "parameter": "presence",
+                            "condition": {
+                                "operator": "<",
+                                "value": 20
+                            }
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "type": "device_control",
+                            "deviceId": "air_conditioner",
+                            "command": "turn_on",
+                            "parameters": {
+                                "temperature": 22
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
